@@ -1,45 +1,30 @@
 const express = require('express');
-const WebSocket = require('ws');
+const http = require('http');
+const { Server } = require('socket.io');
+
 const app = express();
-const port = 8080;
+const server = http.createServer(app);
 
-// WebSocket server'ı kuruyoruz
-const wss = new WebSocket.Server({ noServer: true });
-let users = [];  // Bağlanan kullanıcıların listesi
-
-// Mesajları tüm kullanıcılara göndermek için yardımcı fonksiyon
-function broadcast(message, ws) {
-  users.forEach(user => {
-    if (user.ws !== ws) {  // Gönderilen kullanıcıya mesaj gönderme
-      user.ws.send(message);
-    }
-  });
-}
-
-// WebSocket bağlantısı kurulduğunda
-wss.on('connection', (ws) => {
-  ws.on('message', (message) => {
-    console.log('received: %s', message);
-    broadcast(message, ws);  // Mesajı diğer kullanıcılara yayınla
-  });
-
-  // Bağlantı kesildiğinde kullanıcının listesinden sil
-  ws.on('close', () => {
-    users = users.filter(user => user.ws !== ws);
-  });
-
-  // Yeni bir kullanıcı bağlandığında kullanıcıyı ekle
-  users.push({ ws });
+const io = new Server(server, {
+  cors: {
+    origin: 'http://localhost:3000',
+    methods: ['GET', 'POST'],
+  },
 });
 
-// HTTP server ile WebSocket server'ını aynı anda çalıştırmak için:
-app.server = app.listen(port, () => {
-  console.log(`Server started on port ${port}`);
+io.on('connection', (socket) => {
+  console.log(`User connected: ${socket.id}`);
+
+  socket.on('send_message', (data) => {
+    console.log(`Message from ${socket.id}: ${data.message}`);
+    io.emit('receive_message', { id: socket.id, message: data.message });
+  });
+
+  socket.on('disconnect', () => {
+    console.log(`User disconnected: ${socket.id}`);
+  });
 });
 
-// WebSocket bağlantısı için HTTP server'ı yönlendir
-app.server.on('upgrade', (request, socket, head) => {
-  wss.handleUpgrade(request, socket, head, (ws) => {
-    wss.emit('connection', ws, request);
-  });
+server.listen(3001, () => {
+  console.log('Server is running on port 3001');
 });
