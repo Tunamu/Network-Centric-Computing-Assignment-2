@@ -5,6 +5,7 @@ const { Server } = require('socket.io');
 const app = express();
 const server = http.createServer(app);
 
+
 const io = new Server(server, {
   cors: {
     origin: 'http://localhost:3000',
@@ -16,8 +17,8 @@ io.on('connection', (socket) => {
   console.log(`User connected: ${socket.id}`);
 
   socket.on('send_message', (data) => {
-    console.log(`Message from ${socket.id}: ${data.message}`);
-    io.emit('receive_message', { id: socket.id, message: data.message });
+    console.log(`Message from ${socket.id} username: ${data.username}: ${data.message}`);
+    io.emit('receive_message', { id: data.username, message: data.message });
   });
 
   socket.on('disconnect', () => {

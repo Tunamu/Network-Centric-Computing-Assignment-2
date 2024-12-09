@@ -5,6 +5,7 @@ const socket = io('http://localhost:3001');
 
 function App() {
   const [message, setMessage] = useState('');
+  const [username, setUsername] = useState('');
   const [chat, setChat] = useState([]);
 
   useEffect(() => {
@@ -19,7 +20,7 @@ function App() {
 
   const sendMessage = () => {
     if (message.trim()) {
-      socket.emit('send_message', { message });
+      socket.emit('send_message', { username,message });
       setMessage('');
     }
   };
@@ -34,6 +35,13 @@ function App() {
           </div>
         ))}
       </div>
+      <input
+        type="text"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
+        placeholder="Set Username"
+        style={{ marginRight: '10px' }}
+      />
       <input
         type="text"
         value={message}
