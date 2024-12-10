@@ -5,6 +5,7 @@ const socket = io('http://localhost:3001');
 
 function App() {
   const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [targetUser, setTargetUser] = useState('');
   const [message, setMessage] = useState('');
   const [chat, setChat] = useState([]);
@@ -43,10 +44,21 @@ function App() {
 
   const registerUser = () => {
     if (username.trim()) {
-      socket.emit('register_user', {
-        username,
-        role: isAdmin ? 'admin' : 'user',
-      });
+      if(isAdmin){
+        if(password==="root"){
+          socket.emit('register_user', {
+            username,
+            role:'admin',
+          });
+        }else{
+          alert("Invalid admin password, Try again")
+        }
+      }else{
+        socket.emit('register_user', {
+          username,
+          role: 'user',
+        });
+      }
     }
   };
 
@@ -88,15 +100,24 @@ function App() {
           value={username}
           onChange={(e) => setUsername(e.target.value)}
         />
-        <button onClick={registerUser}>Register</button>
       </div>
-      <div style={{ marginTop: '20px' }}>
+      <h3 style={{ marginTop: '20px' }}>For Admin:</h3>
+      <div>
         <input
           type="checkbox"
           onChange={(e) => setIsAdmin(e.target.checked)}
         />
-        <label>Register as Admin</label>
+        <input
+        type='password' 
+        placeholder='Password'
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        />
       </div>
+      <div style={{marginTop: '20px'}}>
+        <button onClick={registerUser}>Register</button>
+      </div>
+
 
       {/* Mesaj gönderme */}
       <div style={{ marginTop: '20px' }}>
