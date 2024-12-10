@@ -155,7 +155,7 @@ function App() {
           <div
             key={index}
             style={{
-              color: msg.type === 'private' ? 'red' : 'black',
+              color: msg.type === 'private' ? 'red' : msg.type === 'game' ? 'green' : 'black',
               marginBottom: '10px',
             }}
           >

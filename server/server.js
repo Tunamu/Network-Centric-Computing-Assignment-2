@@ -42,50 +42,79 @@ io.on('connection', (socket) => {
         currentGame[username] = {
           word: randomWord,
           attempts: 5,
-          progress: '_'.repeat(randomWord.length).split(''), // Başlangıçta kelimenin tamamı "_"
+          progress: '_'.repeat(randomWord.length).split(''),
         };
-        socket.emit('game_update', `Game started! Word: ${currentGame[username].progress.join('')}`);
+        const updateMessage = {
+          type: 'game',
+          from: 'Game System',
+          message: `Game started! Word: ${currentGame[username].progress.join('')}`,
+          timestamp: new Date().toISOString(),
+        };
+        messages[`${socket.id}-${Date.now()}`] = updateMessage;
+        io.emit('receive_message', updateMessage);
       } else {
         socket.emit('game_update', 'You are already in a game!');
       }
     } else if (message === '#GAMESTOP') {
       if (currentGame[username]) {
         delete currentGame[username];
-        socket.emit('game_update', 'Game stopped.');
+        const updateMessage = {
+          type: 'game',
+          from: 'Game System',
+          message: 'Game stopped.',
+          timestamp: new Date().toISOString(),
+        };
+        messages[`${socket.id}-${Date.now()}`] = updateMessage;
+        io.emit('receive_message', updateMessage);
       } else {
         socket.emit('game_update', 'No active game to stop.');
       }
     } else if (currentGame[username]) {
       const game = currentGame[username];
       if (message === game.word) {
-        socket.emit('game_update', `Congratulations! You guessed the word: ${game.word}`);
+        const winMessage = {
+          type: 'game',
+          from: 'Game System',
+          message: `Congratulations ${username}! You guessed the word: ${game.word}`,
+          timestamp: new Date().toISOString(),
+        };
+        messages[`${socket.id}-${Date.now()}`] = winMessage;
+        io.emit('receive_message', winMessage);
         delete currentGame[username];
       } else {
         game.attempts--;
-
-        // Doğru harfleri ve yanlış harfleri güncelle
         const guess = message.split('');
         const updatedProgress = game.progress.map((char, index) =>
           guess[index] === game.word[index] ? game.word[index] : char
         );
-
+  
         game.progress = updatedProgress;
-
+  
         if (game.attempts === 0) {
-          socket.emit('game_update', `Game over! The word was: ${game.word}`);
+          const loseMessage = {
+            type: 'game',
+            from: 'Game System',
+            message: `Game over! The word was: ${game.word}`,
+            timestamp: new Date().toISOString(),
+          };
+          messages[`${socket.id}-${Date.now()}`] = loseMessage;
+          io.emit('receive_message', loseMessage);
           delete currentGame[username];
         } else {
-          socket.emit(
-            'game_update',
-            `Progress: ${game.progress.join('')} | Remaining attempts: ${game.attempts}`
-          );
+          const progressMessage = {
+            type: 'game',
+            from: 'Game System',
+            message: `Progress: ${game.progress.join('')} | Remaining attempts: ${game.attempts}`,
+            timestamp: new Date().toISOString(),
+          };
+          messages[`${socket.id}-${Date.now()}`] = progressMessage;
+          io.emit('receive_message', progressMessage);
         }
       }
     } else {
       const timestamp = new Date().toISOString();
       const messageId = `${socket.id}-${Date.now()}`;
       messages[messageId] = { id: messageId, type: 'general', from: username, message, timestamp };
-      console.log(`General message from ${username}: ${message}`);
       io.emit('receive_message', messages[messageId]);
     }
   });
