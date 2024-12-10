@@ -36,6 +36,11 @@ io.on('connection', (socket) => {
   });
 
   socket.on('send_general_message', ({ username, message }) => {
+    const timestamp = new Date().toISOString();
+    const messageId = `${socket.id}-${Date.now()}`;
+    messages[messageId] = { id: messageId, type: 'general', from: username, message, timestamp };
+    io.emit('receive_message', messages[messageId]);
+    
     if (message === '#GAMESTART') {
       if (!currentGame[username]) {
         const randomWord = words[Math.floor(Math.random() * words.length)];
@@ -111,12 +116,7 @@ io.on('connection', (socket) => {
           io.emit('receive_message', progressMessage);
         }
       }
-    } else {
-      const timestamp = new Date().toISOString();
-      const messageId = `${socket.id}-${Date.now()}`;
-      messages[messageId] = { id: messageId, type: 'general', from: username, message, timestamp };
-      io.emit('receive_message', messages[messageId]);
-    }
+    } 
   });
 
   socket.on('private_message', ({ from, to, message }) => {
