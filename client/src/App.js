@@ -22,7 +22,6 @@ function App() {
     // Gelen mesajları işleme (genel veya özel)
     socket.on('receive_message', (data) => {
       setChat((prev) => [...prev, data]);
-      console.log(chat);
     });
 
     // Mesaj güncellemesi
