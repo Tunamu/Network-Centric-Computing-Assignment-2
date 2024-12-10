@@ -19,18 +19,18 @@ let currentGame = {}; // Oyun durumu { username: { word, attempts, progress } }
  // Mesajları tutan obje
 
 io.on('connection', (socket) => {
-  console.log(`User connected: ${socket.id}`);
+  console.info(`User connected: ${socket.id}`);
 
   socket.on('register_user', ({ username, role }) => {
     if (!users[username]) {
       users[username] = { socket, role };
       userList.push({ username, role });
-      console.log(`SUCCESS: User ${username} is registered as ${role} role`);
+      console.info(`SUCCESS: User ${username} is registered as ${role} role`);
 
       io.emit('update_user_list', userList);
       socket.emit('register_success', { role });
     } else {
-      console.log(`FAILED: ${username} is already taken`);
+      console.error(`FAILED: ${username} is already taken`);
       socket.emit('register_failed', 'Username is already taken');
     }
   });
@@ -128,13 +128,13 @@ io.on('connection', (socket) => {
     messages[messageId] = privateMessage;
 
     if (targetSocket) targetSocket.emit('receive_message', privateMessage);
-    console.log(`Private message from ${from} to ${to}: ${message}`);
+    console.info(`Private message from ${from} to ${to}: ${message}`);
     socket.emit('receive_message', privateMessage);
   });
 
   socket.on('delete_message', ({ admin, messageId }) => {
     if (messages[messageId]) {
-      console.log(`Message (${messages[messageId].message}) is deleted by admin`);
+      console.info(`Message (${messages[messageId].message}) is deleted by admin`);
       delete messages[messageId];
       io.emit('update_chat', Object.values(messages));
     }
@@ -144,7 +144,7 @@ io.on('connection', (socket) => {
     const targetSocket = users[targetUser]?.socket;
     if (targetSocket) {
       targetSocket.emit('blocked', { message: 'You have been blocked by an admin.' });
-      console.log(`${targetUser} is blocked by admin`);
+      console.warn(`${targetUser} is blocked by admin`);
       targetSocket.disconnect();
     }
   });
@@ -157,12 +157,12 @@ io.on('connection', (socket) => {
       delete users[username];
       const index = userList.findIndex((user) => user.username === username);
       if (index !== -1) userList.splice(index, 1);
-      console.log(`User disconnected: ${username}`);
+      console.warn(`User disconnected: ${username}`);
       io.emit('update_user_list', userList);
     }
   });
 });
 
 server.listen(3001, () => {
-  console.log('Server is running on port 3001');
+  console.info('Server is running on port 3001');
 });
