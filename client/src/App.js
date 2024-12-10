@@ -22,6 +22,7 @@ function App() {
     // Gelen mesajları işleme (genel veya özel)
     socket.on('receive_message', (data) => {
       setChat((prev) => [...prev, data]);
+      console.log(chat);
     });
 
     // Mesaj güncellemesi
@@ -161,16 +162,17 @@ function App() {
           >
             <strong>
               {msg.type === 'private'
-                ? `${msg.from} (to ${msg.to}):`
-                : `${msg.from}:`}
+                ? `${msg.from || 'Unknown'} (to ${msg.to || 'Unknown'}):`
+                : `${msg.from || 'Unknown'}:`}
             </strong>{' '}
-            {msg.message}{' '}
-            <em>({new Date(msg.timestamp).toLocaleString()})</em>
-            {userRole === 'admin' && (
+            {msg.message || 'No content'}{' '}
+            <em>({new Date(msg.timestamp || Date.now()).toLocaleString()})</em>
+            {userRole === 'admin' && msg.id && (
               <button onClick={() => deleteMessage(msg.id)}>Delete</button>
             )}
           </div>
         ))}
+
       </div>
 
       {/* Kullanıcıları göster */}
@@ -178,7 +180,7 @@ function App() {
         <h3>Users</h3>
         {userList.length > 0 ? (
           userList.map((user, index) => (
-            <div key={index}>
+            <div key={index} style={{color: user.role==='admin'? 'blue':'black'}}>
               {user.username} ({user.role})
               {userRole === 'admin' && user.role !== 'admin' && (
                 <button onClick={() => blockUser(user.username)}>Block</button>
