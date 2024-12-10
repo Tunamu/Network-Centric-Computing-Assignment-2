@@ -13,7 +13,10 @@ const io = new Server(server, {
 
 const users = {};
 const userList = [];
-const messages = {}; // Mesajları tutan obje
+const messages = {};
+const words = ['apple', 'banana', 'grape', 'orange', 'peach', 'pear', 'plum', 'berry', 'mango', 'melon'];
+let currentGame = {}; // Oyun durumu { username: { word, attempts, progress } }
+ // Mesajları tutan obje
 
 io.on('connection', (socket) => {
   console.log(`User connected: ${socket.id}`);
@@ -33,11 +36,58 @@ io.on('connection', (socket) => {
   });
 
   socket.on('send_general_message', ({ username, message }) => {
-    const timestamp = new Date().toISOString();
-    const messageId = `${socket.id}-${Date.now()}`;
-    messages[messageId] = { id: messageId, type: 'general', from: username, message, timestamp };
-    console.log(`General message from ${username}: ${message}`);
-    io.emit('receive_message', messages[messageId]);
+    /*if (message === '#GAMESTART') {
+      if (!currentGame[username]) {
+        const randomWord = words[Math.floor(Math.random() * words.length)];
+        currentGame[username] = {
+          word: randomWord,
+          attempts: 5,
+          progress: '_'.repeat(randomWord.length).split(''), // Başlangıçta kelimenin tamamı "_"
+        };
+        socket.emit('game_update', `Game started! Word: ${currentGame[username].progress.join('')}`);
+      } else {
+        socket.emit('game_update', 'You are already in a game!');
+      }
+    } else if (message === '#GAMESTOP') {
+      if (currentGame[username]) {
+        delete currentGame[username];
+        socket.emit('game_update', 'Game stopped.');
+      } else {
+        socket.emit('game_update', 'No active game to stop.');
+      }
+    } else if (currentGame[username]) {
+      const game = currentGame[username];
+      if (message === game.word) {
+        socket.emit('game_update', `Congratulations! You guessed the word: ${game.word}`);
+        delete currentGame[username];
+      } else {
+        game.attempts--;
+
+        // Doğru harfleri ve yanlış harfleri güncelle
+        const guess = message.split('');
+        const updatedProgress = game.progress.map((char, index) =>
+          guess[index] === game.word[index] ? game.word[index] : char
+        );
+
+        game.progress = updatedProgress;
+
+        if (game.attempts === 0) {
+          socket.emit('game_update', `Game over! The word was: ${game.word}`);
+          delete currentGame[username];
+        } else {
+          socket.emit(
+            'game_update',
+            `Progress: ${game.progress.join('')} | Remaining attempts: ${game.attempts}`
+          );
+        }
+      }
+    } else {*/
+      const timestamp = new Date().toISOString();
+      const messageId = `${socket.id}-${Date.now()}`;
+      messages[messageId] = { id: messageId, type: 'general', from: username, message, timestamp };
+      console.log(`General message from ${username}: ${message}`);
+      io.emit('receive_message', messages[messageId]);
+    //}
   });
 
   socket.on('private_message', ({ from, to, message }) => {
