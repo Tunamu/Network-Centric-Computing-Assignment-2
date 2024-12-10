@@ -9,6 +9,8 @@ function App() {
   const [message, setMessage] = useState('');
   const [chat, setChat] = useState([]);
   const [userList, setUserList] = useState([]);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [userRole, setUserRole] = useState('');
 
   useEffect(() => {
     // Kullanıcı listesini güncelle
@@ -21,15 +23,30 @@ function App() {
       setChat((prev) => [...prev, data]);
     });
 
+    // Mesaj güncellemesi
+    socket.on('update_chat', (updatedChat) => {
+      setChat(updatedChat);
+    });
+
+    // Kayıt başarılı olduğunda rolü al
+    socket.on('register_success', (data) => {
+      setUserRole(data.role);
+    });
+
     return () => {
       socket.off('update_user_list');
       socket.off('receive_message');
+      socket.off('update_chat');
+      socket.off('register_success');
     };
   }, []);
 
   const registerUser = () => {
     if (username.trim()) {
-      socket.emit('register_user', username);
+      socket.emit('register_user', {
+        username,
+        role: isAdmin ? 'admin' : 'user',
+      });
     }
   };
 
@@ -51,6 +68,14 @@ function App() {
     }
   };
 
+  const deleteMessage = (messageId) => {
+    socket.emit('delete_message', { admin: username, messageId });
+  };
+
+  const blockUser = (targetUser) => {
+    socket.emit('block_user', { admin: username, targetUser });
+  };
+
   return (
     <div style={{ padding: '20px' }}>
       <h1>Chat App</h1>
@@ -65,6 +90,13 @@ function App() {
         />
         <button onClick={registerUser}>Register</button>
       </div>
+      <div style={{ marginTop: '20px' }}>
+        <input
+          type="checkbox"
+          onChange={(e) => setIsAdmin(e.target.checked)}
+        />
+        <label>Register as Admin</label>
+      </div>
 
       {/* Mesaj gönderme */}
       <div style={{ marginTop: '20px' }}>
@@ -77,8 +109,8 @@ function App() {
           >
             <option value="">Send to General</option>
             {userList.map((user, index) => (
-              <option key={index} value={user}>
-                {user}
+              <option key={index} value={user.username}>
+                {user.username} ({user.role})
               </option>
             ))}
           </select>
@@ -113,8 +145,28 @@ function App() {
             </strong>{' '}
             {msg.message}{' '}
             <em>({new Date(msg.timestamp).toLocaleString()})</em>
+            {userRole === 'admin' && (
+              <button onClick={() => deleteMessage(msg.id)}>Delete</button>
+            )}
           </div>
         ))}
+      </div>
+
+      {/* Kullanıcıları göster */}
+      <div style={{ marginTop: '20px' }}>
+        <h3>Users</h3>
+        {userList.length > 0 ? (
+          userList.map((user, index) => (
+            <div key={index}>
+              {user.username} ({user.role})
+              {userRole === 'admin' && user.role !== 'admin' && (
+                <button onClick={() => blockUser(user.username)}>Block</button>
+              )}
+            </div>
+          ))
+        ) : (
+          <p>No users connected</p>
+        )}
       </div>
     </div>
   );
