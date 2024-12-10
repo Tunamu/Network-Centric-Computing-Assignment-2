@@ -39,6 +39,7 @@ io.on('connection', (socket) => {
     const timestamp = new Date().toISOString();
     const messageId = `${socket.id}-${Date.now()}`;
     messages[messageId] = { id: messageId, type: 'general', from: username, message, timestamp };
+    console.info(`General message from ${username}: ${message}`);
     io.emit('receive_message', messages[messageId]);
     
     if (message === '#GAMESTART') {
@@ -56,6 +57,7 @@ io.on('connection', (socket) => {
           timestamp: new Date().toISOString(),
         };
         messages[`${socket.id}-${Date.now()}`] = updateMessage;
+        console.info(`Game started by ${username}, word: ${currentGame[username].progress.join('')}`);
         io.emit('receive_message', updateMessage);
       } else {
         socket.emit('game_update', 'You are already in a game!');
@@ -70,6 +72,7 @@ io.on('connection', (socket) => {
           timestamp: new Date().toISOString(),
         };
         messages[`${socket.id}-${Date.now()}`] = updateMessage;
+        console.info(`Game stopped by ${username}`);
         io.emit('receive_message', updateMessage);
       } else {
         socket.emit('game_update', 'No active game to stop.');
@@ -84,6 +87,7 @@ io.on('connection', (socket) => {
           timestamp: new Date().toISOString(),
         };
         messages[`${socket.id}-${Date.now()}`] = winMessage;
+        console.info(`Game is finished by ${username} because of finding the word: ${currentGame[username].progress.join('')}`)
         io.emit('receive_message', winMessage);
         delete currentGame[username];
       } else {
@@ -103,6 +107,7 @@ io.on('connection', (socket) => {
             timestamp: new Date().toISOString(),
           };
           messages[`${socket.id}-${Date.now()}`] = loseMessage;
+          console.info(`Game over because of the attemp size`);
           io.emit('receive_message', loseMessage);
           delete currentGame[username];
         } else {
