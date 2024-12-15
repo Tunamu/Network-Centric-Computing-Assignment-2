@@ -14,6 +14,8 @@ const io = new Server(server, {
 const users = {};
 const userList = [];
 const messages = {};
+
+//TODO oyun ilk harf eklenecek 
 const words = ['apple', 'banana', 'grape', 'orange', 'peach', 'pear', 'plum', 'berry', 'mango', 'melon'];
 let currentGame = {}; // Oyun durumu { username: { word, attempts, progress } }
  // Mesajları tutan obje
@@ -42,6 +44,7 @@ io.on('connection', (socket) => {
     console.info(`General message from ${username}: ${message}`);
     io.emit('receive_message', messages[messageId]);
     
+    //TODO 3 kere bilemeyince bir harf verilecek bütün harfler bitince oyun bitecek
     if (message === '#GAMESTART') {
       if (!currentGame[username]) {
         const randomWord = words[Math.floor(Math.random() * words.length)];

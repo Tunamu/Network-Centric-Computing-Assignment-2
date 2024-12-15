@@ -34,6 +34,7 @@ function App() {
       setUserRole(data.role);
     });
 
+    //TODO enter ile mesaj gönderme eklenecek 
     return () => {
       socket.off('update_user_list');
       socket.off('receive_message');
