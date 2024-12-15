@@ -89,6 +89,17 @@ function App() {
     socket.emit('block_user', { admin: username, targetUser });
   };
 
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      // Eğer targetUser varsa özel mesaj gönder, yoksa genel mesaj gönder
+      if (targetUser) {
+        sendPrivateMessage();
+      } else {
+        sendGeneralMessage();
+      }
+    }
+  };
+
   return (
     <div style={{ padding: '20px' }}>
       <h1>Chat App</h1>
@@ -142,6 +153,7 @@ function App() {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             style={{ marginRight: '10px' }}
+            onKeyDown={handleKeyPress}
           />
           <button onClick={targetUser ? sendPrivateMessage : sendGeneralMessage}>
             Send
