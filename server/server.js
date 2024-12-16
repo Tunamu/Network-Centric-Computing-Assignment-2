@@ -14,6 +14,7 @@ const io = new Server(server, {
 const users = {};
 const userList = [];
 const messages = {};
+
 const words = ['apple', 'banana', 'grape', 'orange', 'peach', 'pear', 'plum', 'berry', 'mango', 'melon'];
 let currentGame = {}; // Oyun durumu { username: { word, attempts, progress } }
 
@@ -40,20 +41,20 @@ io.on('connection', (socket) => {
     messages[messageId] = { id: messageId, type: 'general', from: username, message, timestamp };
     console.info(`General message from ${username}: ${message}`);
     io.emit('receive_message', messages[messageId]);
-
+    
     if (message === '#GAMESTART') {
       if (!currentGame[username]) {
         const randomWord = words[Math.floor(Math.random() * words.length)];
-        const progress = '_'.repeat(randomWord.length).split('');
-
+        const initialProgress = '_'.repeat(randomWord.length).split('');
+        
         // Rastgele bir harf aç
         const randomIndex = Math.floor(Math.random() * randomWord.length);
-        progress[randomIndex] = randomWord[randomIndex];
+        initialProgress[randomIndex] = randomWord[randomIndex];
 
         currentGame[username] = {
           word: randomWord,
-          attempts: 3, // 3 deneme hakkı ile başlıyor
-          progress,
+          attempts: 3,
+          progress: initialProgress,
         };
 
         const updateMessage = {
@@ -87,6 +88,7 @@ io.on('connection', (socket) => {
       const game = currentGame[username];
 
       if (message === game.word) {
+        // Oyuncu kelimeyi doğru tahmin ettiğinde kazanır
         const winMessage = {
           type: 'game',
           from: 'Game System',
@@ -111,26 +113,33 @@ io.on('connection', (socket) => {
             }
           }
 
-          // Hakkı sıfırla
-          game.attempts = 3;
-
-          const revealMessage = {
-            type: 'game',
-            from: 'Game System',
-            message: `No attempts left! A new letter has been revealed: ${game.progress.join('')}`,
-            timestamp: new Date().toISOString(),
-          };
-          messages[`${socket.id}-${Date.now()}`] = revealMessage;
-          console.info(`No attempts left for ${username}, revealed a letter: ${game.progress.join('')}`);
-          io.emit('receive_message', revealMessage);
+          // Eğer artık kelimede kapalı harf kalmadıysa ve kullanıcı hala doğru tahmin edemediyse
+          if (!game.progress.includes('_')) {
+            const loseMessage = {
+              type: 'game',
+              from: 'Game System',
+              message: `Game over! The word was: ${game.word}. Better luck next time, ${username}!`,
+              timestamp: new Date().toISOString(),
+            };
+            messages[`${socket.id}-${Date.now()}`] = loseMessage;
+            console.info(`Game over automatically for ${username}: ${game.word}`);
+            io.emit('receive_message', loseMessage);
+            delete currentGame[username];
+          } else {
+            // Hakkı sıfırla ve ilerleme mesajı gönder
+            game.attempts = 3;
+            const revealMessage = {
+              type: 'game',
+              from: 'Game System',
+              message: `No attempts left! A new letter has been revealed: ${game.progress.join('')}`,
+              timestamp: new Date().toISOString(),
+            };
+            messages[`${socket.id}-${Date.now()}`] = revealMessage;
+            console.info(`No attempts left for ${username}, revealed a letter: ${game.progress.join('')}`);
+            io.emit('receive_message', revealMessage);
+          }
         } else {
-          const guess = message.split('');
-          const updatedProgress = game.progress.map((char, index) =>
-            guess[index] === game.word[index] ? game.word[index] : char
-          );
-
-          game.progress = updatedProgress;
-
+          // Yanlış tahminde bulunulduğu mesajı
           const progressMessage = {
             type: 'game',
             from: 'Game System',
@@ -140,51 +149,7 @@ io.on('connection', (socket) => {
           messages[`${socket.id}-${Date.now()}`] = progressMessage;
           io.emit('receive_message', progressMessage);
         }
-
-        // Tüm kelime açılmışsa oyunu bitir
-        if (!game.progress.includes('_')) {
-          const winMessage = {
-            type: 'game',
-            from: 'Game System',
-            message: `Congratulations ${username}! The word was fully revealed: ${game.word}`,
-            timestamp: new Date().toISOString(),
-          };
-          messages[`${socket.id}-${Date.now()}`] = winMessage;
-          console.info(`Game finished automatically for ${username}: ${game.word}`);
-          io.emit('receive_message', winMessage);
-          delete currentGame[username];
-        }
       }
-    }
-  });
-
-  socket.on('private_message', ({ from, to, message }) => {
-    const targetSocket = users[to]?.socket;
-    const timestamp = new Date().toISOString();
-    const messageId = `${socket.id}-${Date.now()}`;
-    const privateMessage = { id: messageId, type: 'private', from, to, message, timestamp };
-
-    messages[messageId] = privateMessage;
-
-    if (targetSocket) targetSocket.emit('receive_message', privateMessage);
-    console.info(`Private message from ${from} to ${to}: ${message}`);
-    socket.emit('receive_message', privateMessage);
-  });
-
-  socket.on('delete_message', ({ admin, messageId }) => {
-    if (messages[messageId]) {
-      console.info(`Message (${messages[messageId].message}) is deleted by admin`);
-      delete messages[messageId];
-      io.emit('update_chat', Object.values(messages));
-    }
-  });
-
-  socket.on('block_user', ({ admin, targetUser }) => {
-    const targetSocket = users[targetUser]?.socket;
-    if (targetSocket) {
-      targetSocket.emit('blocked', { message: 'You have been blocked by an admin.' });
-      console.warn(`${targetUser} is blocked by admin`);
-      targetSocket.disconnect();
     }
   });
 
