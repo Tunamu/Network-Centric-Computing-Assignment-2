@@ -14,7 +14,7 @@ const io = new Server(server, {
 const users = {};
 const userList = [];
 const messages = {};
-const words = ['apple', 'banana', 'grape', 'orange', 'peach', 'pear', 'plum', 'berry', 'mango', 'melon'];
+const words = ['socket', 'network', 'paralel', 'computing', 'line', 'cpu', 'cable'];
 let currentGame = {}; // Oyun durumu { username: { word, attempts, progress } }
 
 io.on('connection', (socket) => {
