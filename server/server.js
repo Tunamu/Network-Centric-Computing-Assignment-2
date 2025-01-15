@@ -157,6 +157,23 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('delete_message', ({ admin, messageId }) => {
+    if (messages[messageId]) {
+      console.info(`Message (${messages[messageId].message}) is deleted by admin`);
+      delete messages[messageId];
+      io.emit('update_chat', Object.values(messages));
+    }
+  });
+
+  socket.on('block_user', ({ admin, targetUser }) => {
+    const targetSocket = users[targetUser]?.socket;
+    if (targetSocket) {
+      targetSocket.emit('blocked', { message: 'You have been blocked by an admin.' });
+      console.warn(`${targetUser} is blocked by admin`);
+      targetSocket.disconnect();
+    }
+  });
+
   // Kullanıcı bağlantısını kopardığında
   socket.on('disconnect', () => {
     const username = Object.keys(users).find(
