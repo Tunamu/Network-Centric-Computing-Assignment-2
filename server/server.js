@@ -156,6 +156,20 @@ io.on('connection', (socket) => {
       }
     }
   });
+  
+  socket.on('private_message', ({ from, to, message }) => {
+    const targetSocket = users[to]?.socket;
+    const timestamp = new Date().toISOString();
+    const messageId = `${socket.id}-${Date.now()}`;
+    const privateMessage = { id: messageId, type: 'private', from, to, message, timestamp };
+
+    messages[messageId] = privateMessage;
+
+    if (targetSocket) targetSocket.emit('receive_message', privateMessage);
+    console.info(`Private message from ${from} to ${to}: ${message}`);
+    socket.emit('receive_message', privateMessage);
+  });
+
 
   socket.on('delete_message', ({ admin, messageId }) => {
     if (messages[messageId]) {
